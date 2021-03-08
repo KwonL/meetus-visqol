@@ -18,8 +18,8 @@ def get_delay_for_inout(in_file, out_file):
 
     af = fftpack.fft(a)
     bf = fftpack.fft(b)
-    Ar = -af.conjugate()
-    return np.argmax(np.abs(fftpack.ifft(Ar * bf))) / sample_rate
+    ar = -af.conjugate()
+    return np.argmax(np.abs(fftpack.ifft(ar * bf))) / sample_rate
 
 
 if __name__ == "__main__":
