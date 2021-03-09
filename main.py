@@ -49,7 +49,6 @@ def record_testing():
     out_dev = dict()
     for i in range(pyaud.get_device_count()):
         dev = pyaud.get_device_info_by_index(i)
-        print(dev)
         if IN_DEVICE_NAME in dev.get("name") and dev["maxInputChannels"] > 0:
             in_dev = dev
         elif OUT_DEVICE_NAME in dev.get("name") and dev["maxOutputChannels"] > 0:
