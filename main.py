@@ -1,11 +1,11 @@
-import os
-import subprocess
+import argparse
 import wave
 from threading import Thread, Semaphore
-from delay import get_delay_for_inout
 
-import argparse
 import pyaudio
+
+from delay import get_delay_for_inout
+from visqol import run_visqol
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
@@ -34,12 +34,14 @@ def stream_file_to_dev(pyaud: pyaudio.PyAudio, dev: dict):
     file.close()
 
 
-def capture():
+def record_testing():
     pyaud = pyaudio.PyAudio()
 
     global RECORD_SECONDS
+    global RATE
     with wave.open(WAVE_INPUT_FILENAME, "rb") as f:
         RECORD_SECONDS = f.getnframes() / float(f.getframerate()) + 1
+        RATE = f.getframerate()
     print(f"duration is {RECORD_SECONDS}")
 
     # Find device
@@ -84,25 +86,6 @@ def capture():
     wf.close()
 
 
-def run_visqol():
-    visqol = subprocess.Popen(
-        [
-            "docker",
-            "run",
-            "-it",
-            "-v",
-            f"{os.getcwd()}:/data",
-            "jonashaag/visqol:v3",
-            "--degraded_file",
-            f"/data/{WAVE_OUTPUT_FILENAME}",
-            "--reference_file",
-            f"/data/{WAVE_INPUT_FILENAME}",
-            "--verbose",
-        ]
-    )
-    visqol.wait()
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-file", "-i", type=str, help="테스트용 입력 파일")
@@ -110,8 +93,8 @@ if __name__ == "__main__":
 
     WAVE_INPUT_FILENAME = args.input_file
 
-    capture()
-    run_visqol()
+    record_testing()
+    run_visqol(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)
     print("=============================================")
     print(
         f"delay for this audio is: {get_delay_for_inout(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)}"
