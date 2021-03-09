@@ -89,6 +89,12 @@ def record_testing():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-file", "-i", type=str, help="테스트용 입력 파일")
+    parser.add_argument(
+        "--input-device", "-r", type=str, help="PC의 마이크 포트로 오디오를 입력받을 디바이스 이름의 일부"
+    )
+    parser.add_argument(
+        "--output-device", "-p", type=str, help="PC의 스피커 포트 오디오를 출력할 디바이스 이름의 일부"
+    )
     args = parser.parse_args()
 
     WAVE_INPUT_FILENAME = args.input_file
