@@ -1,4 +1,5 @@
 import argparse
+import logging
 import wave
 from threading import Thread, Semaphore
 
@@ -16,6 +17,12 @@ WAVE_OUTPUT_FILENAME = "output.wav"
 IN_DEVICE_NAME = "BY Hi-Res"
 OUT_DEVICE_NAME = "외장"
 semaphore = Semaphore(0)
+logging.basicConfig(
+    filename="logs/meetus-audio-testing.log",
+    format="%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] - %(message)s",
+    level=logging.DEBUG,
+)
+logger = logging.getLogger(__name__)
 
 
 def stream_file_to_dev(pyaud: pyaudio.PyAudio, dev: dict):
@@ -42,7 +49,7 @@ def record_testing():
     with wave.open(WAVE_INPUT_FILENAME, "rb") as f:
         RECORD_SECONDS = f.getnframes() / float(f.getframerate()) + 1
         RATE = f.getframerate()
-    print(f"duration is {RECORD_SECONDS}")
+    logger.info(f"duration is {RECORD_SECONDS}")
 
     # Find device
     in_dev = dict()
@@ -65,13 +72,13 @@ def record_testing():
     streaming_thread = Thread(target=stream_file_to_dev, args=(pyaud, out_dev))
     streaming_thread.start()
 
-    print("* start recording")
+    logger.info("* start recording")
     semaphore.acquire()
     frames = []
     for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
         data = input_stream.read(CHUNK)
         frames.append(data)
-    print("* done recording")
+    logger.info("* done recording")
 
     input_stream.stop_stream()
     input_stream.close()
@@ -94,13 +101,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-device", "-p", type=str, help="PC의 스피커 포트 오디오를 출력할 디바이스 이름의 일부"
     )
+    parser.add_argument("--serve-mode", "-s", action="store_true", help="서버 모드로 실행")
     args = parser.parse_args()
 
     WAVE_INPUT_FILENAME = args.input_file
+    IN_DEVICE_NAME = args.input_device
+    OUT_DEVICE_NAME = args.output_device
 
-    record_testing()
-    run_visqol(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)
-    print("=============================================")
-    print(
-        f"delay for this audio is: {get_delay_for_inout(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)}"
-    )
+    if args.serve_mode:
+        print("watchman과의 request/response 형식 논의 후 구현 예정")
+    else:
+        record_testing()
+        run_visqol(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)
+        logger.info("=============================================")
+        logger.info(
+            f"delay for this audio is: {get_delay_for_inout(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)}"
+        )

@@ -1,5 +1,8 @@
 import argparse
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 def run_visqol(in_file="input.wav", out_file="output.wav"):
@@ -7,7 +10,7 @@ def run_visqol(in_file="input.wav", out_file="output.wav"):
         f"docker run -it -v {os.getcwd()}:/data jonashaag/visqol:v3 --degraded_file /data/{in_file} --reference_file "
         f"/data/{out_file} --verbose"
     ).read()
-    print(res)
+    logger.info(res)
     return res
 
 
