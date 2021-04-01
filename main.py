@@ -1,21 +1,24 @@
 import argparse
 import logging
+import os
 import wave
 from threading import Thread, Semaphore
 
 import pyaudio
+from flask import Flask
 
 from delay import get_delay_for_inout
 from visqol import run_visqol
 
+app = Flask(__name__)
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 RATE = 48000
 RECORD_SECONDS = 10
-WAVE_INPUT_FILENAME = "input.wav"
+os.putenv("WAVE_INPUT_FILENAME", "input.wav")
+os.putenv("IN_DEVICE_NAME", "BY Hi-Res")
+os.putenv("OUT_DEVICE_NAME", "외장")
 WAVE_OUTPUT_FILENAME = "output.wav"
-IN_DEVICE_NAME = "BY Hi-Res"
-OUT_DEVICE_NAME = "외장"
 semaphore = Semaphore(0)
 logging.basicConfig(
     filename="logs/meetus-audio-testing.log",
@@ -26,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def stream_file_to_dev(pyaud: pyaudio.PyAudio, dev: dict):
-    input_file = wave.open(WAVE_INPUT_FILENAME, "rb")
+    input_file = wave.open(os.getenv("WAVE_INPUT_FILENAME", "input.wav"), "rb")
     output_stream = pyaud.open(
         format=pyaudio.get_format_from_width(input_file.getsampwidth()),
         channels=input_file.getnchannels(),
@@ -35,7 +38,7 @@ def stream_file_to_dev(pyaud: pyaudio.PyAudio, dev: dict):
         output=True,
     )
     input_file.close()
-    file = open(WAVE_INPUT_FILENAME, "rb")
+    file = open(os.getenv("WAVE_INPUT_FILENAME", "input.wav"), "rb")
     semaphore.release()
     output_stream.write(file.read())
     file.close()
@@ -46,7 +49,7 @@ def record_testing():
 
     global RECORD_SECONDS
     global RATE
-    with wave.open(WAVE_INPUT_FILENAME, "rb") as f:
+    with wave.open(os.getenv("WAVE_INPUT_FILENAME", "input.wav"), "rb") as f:
         RECORD_SECONDS = f.getnframes() / float(f.getframerate()) + 1
         RATE = f.getframerate()
     logger.info(f"duration is {RECORD_SECONDS}")
@@ -56,9 +59,9 @@ def record_testing():
     out_dev = dict()
     for i in range(pyaud.get_device_count()):
         dev = pyaud.get_device_info_by_index(i)
-        if IN_DEVICE_NAME in dev.get("name") and dev["maxInputChannels"] > 0:
+        if os.getenv("IN_DEVICE_NAME") in dev.get("name") and dev["maxInputChannels"] > 0:
             in_dev = dev
-        elif OUT_DEVICE_NAME in dev.get("name") and dev["maxOutputChannels"] > 0:
+        elif os.getenv("OUT_DEVICE_NAME") in dev.get("name") and dev["maxOutputChannels"] > 0:
             out_dev = dev
 
     input_stream = pyaud.open(
@@ -104,16 +107,20 @@ if __name__ == "__main__":
     parser.add_argument("--serve-mode", "-s", action="store_true", help="서버 모드로 실행")
     args = parser.parse_args()
 
-    WAVE_INPUT_FILENAME = args.input_file
-    IN_DEVICE_NAME = args.input_device
-    OUT_DEVICE_NAME = args.output_device
+    os.environ["WAVE_INPUT_FILENAME"] = args.input_file
+    os.environ["IN_DEVICE_NAME"] = args.input_device
+    os.environ["OUT_DEVICE_NAME"] = args.output_device
 
     if args.serve_mode:
-        print("watchman과의 request/response 형식 논의 후 구현 예정")
+        from route import main_bp
+
+        app.register_blueprint(main_bp)
+        app.run(debug=True, port=5000)
     else:
         record_testing()
-        run_visqol(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)
+        run_visqol(os.getenv("WAVE_INPUT_FILENAME", "input.wav"), WAVE_OUTPUT_FILENAME)
         logger.info("=============================================")
         logger.info(
-            f"delay for this audio is: {get_delay_for_inout(WAVE_INPUT_FILENAME, WAVE_OUTPUT_FILENAME)}"
+            "delay for this audio is: "
+            f"{get_delay_for_inout(os.getenv('WAVE_INPUT_FILENAME', 'input.wav'), WAVE_OUTPUT_FILENAME)}"
         )
