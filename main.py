@@ -16,8 +16,8 @@ FORMAT = pyaudio.paInt16
 RATE = 48000
 RECORD_SECONDS = 10
 os.putenv("WAVE_INPUT_FILENAME", "input.wav")
-os.putenv("IN_DEVICE_NAME", "BY Hi-Res")
-os.putenv("OUT_DEVICE_NAME", "외장")
+os.putenv("IN_DEVICE_NAME", "")
+os.putenv("OUT_DEVICE_NAME", "")
 WAVE_OUTPUT_FILENAME = "output.wav"
 semaphore = Semaphore(0)
 logging.basicConfig(
@@ -59,9 +59,15 @@ def record_testing():
     out_dev = dict()
     for i in range(pyaud.get_device_count()):
         dev = pyaud.get_device_info_by_index(i)
-        if os.getenv("IN_DEVICE_NAME") in dev.get("name") and dev["maxInputChannels"] > 0:
+        if (
+            os.getenv("IN_DEVICE_NAME") in dev.get("name")
+            and dev["maxInputChannels"] > 0
+        ):
             in_dev = dev
-        elif os.getenv("OUT_DEVICE_NAME") in dev.get("name") and dev["maxOutputChannels"] > 0:
+        elif (
+            os.getenv("OUT_DEVICE_NAME") in dev.get("name")
+            and dev["maxOutputChannels"] > 0
+        ):
             out_dev = dev
 
     input_stream = pyaud.open(
@@ -97,12 +103,22 @@ def record_testing():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-file", "-i", type=str, help="테스트용 입력 파일")
     parser.add_argument(
-        "--input-device", "-r", type=str, help="PC의 마이크 포트로 오디오를 입력받을 디바이스 이름의 일부"
+        "--input-file", "-i", type=str, help="테스트용 입력 파일", default="input.wav"
     )
     parser.add_argument(
-        "--output-device", "-p", type=str, help="PC의 스피커 포트 오디오를 출력할 디바이스 이름의 일부"
+        "--input-device",
+        "-r",
+        type=str,
+        help="PC의 마이크 포트로 오디오를 입력받을 디바이스 이름의 일부",
+        default="마이크",
+    )
+    parser.add_argument(
+        "--output-device",
+        "-p",
+        type=str,
+        help="PC의 스피커 포트 오디오를 출력할 디바이스 이름의 일부",
+        default="스피커",
     )
     parser.add_argument("--serve-mode", "-s", action="store_true", help="서버 모드로 실행")
     args = parser.parse_args()
