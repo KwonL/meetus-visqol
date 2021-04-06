@@ -74,7 +74,7 @@ def record_testing():
         format=FORMAT,
         channels=in_dev.get("maxInputChannels"),
         input_device_index=in_dev.get("index"),
-        rate=RATE,
+        rate=in_dev.get("defaultSampleRate"),
         input=True,
         frames_per_buffer=CHUNK,
     )
