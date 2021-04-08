@@ -34,7 +34,7 @@ def stream_file_to_dev(pyaud: pyaudio.PyAudio, dev: dict):
         format=pyaudio.get_format_from_width(input_file.getsampwidth()),
         channels=input_file.getnchannels(),
         output_device_index=dev.get("index"),
-        rate=input_file.getframerate(),
+        rate=int(dev.get("defaultSampleRate")),
         output=True,
     )
     input_file.close()
