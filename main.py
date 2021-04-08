@@ -131,7 +131,7 @@ if __name__ == "__main__":
         from route import main_bp
 
         app.register_blueprint(main_bp)
-        app.run(debug=True, port=5000)
+        app.run(debug=True, port=5000, host="0.0.0.0")
     else:
         record_testing()
         run_visqol(os.getenv("WAVE_INPUT_FILENAME", "input.wav"), WAVE_OUTPUT_FILENAME)
